@@ -11,7 +11,12 @@ export default function useConverter() {
   const [error, setError] = useState(null);
   const [inputErrors, setInputErrors] = useState([]);
 
-  // auto일 때 실제 감지된 포맷 (파싱/변환에 사용)
+  // Diff 모드
+  const [diffMode, setDiffMode] = useState(false);
+  const [diffOriginal, setDiffOriginal] = useState("");
+  const [diffModified, setDiffModified] = useState("");
+
+  // auto일 때 실제 감지된 포맷
   const resolvedInputFormat = useMemo(() => {
     if (inputFormat !== "auto") return inputFormat;
     if (!inputValue.trim()) return "json";
@@ -27,7 +32,6 @@ export default function useConverter() {
       return;
     }
 
-    // 출력 포맷이 감지된 입력 포맷과 같으면 자동 조정
     let effectiveOutputFormat = outputFormat;
     if (resolvedInputFormat === outputFormat) {
       const formats = ["json", "yaml", "toml"];
@@ -90,7 +94,6 @@ export default function useConverter() {
   const swap = () => {
     setInputValue(outputValue);
     setInputFormat(outputFormat);
-    // 출력 포맷은 이전 resolvedInputFormat 기반
     setOutputFormat(resolvedInputFormat);
   };
 
@@ -98,6 +101,16 @@ export default function useConverter() {
   const loadSample = () => {
     const fmt = resolvedInputFormat;
     setInputValue(SAMPLES[fmt] || SAMPLES.json);
+  };
+
+  // Diff 모드 토글
+  const toggleDiff = () => {
+    if (!diffMode) {
+      // Diff 모드 진입: 현재 입력/출력을 스냅샷
+      setDiffOriginal(inputValue);
+      setDiffModified(outputValue);
+    }
+    setDiffMode(!diffMode);
   };
 
   return {
@@ -113,5 +126,9 @@ export default function useConverter() {
     handleOutputFormatChange,
     swap,
     loadSample,
+    diffMode,
+    diffOriginal,
+    diffModified,
+    toggleDiff,
   };
 }
