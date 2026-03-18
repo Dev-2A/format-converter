@@ -2,6 +2,47 @@ import yaml from "js-yaml";
 import * as TOML from "smol-toml";
 
 /**
+ * 포맷 자동 감지
+ */
+export function detectFormat(input) {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // JSON: { 또는 [ 로 시작하고 파싱 성공
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      JSON.parse(trimmed);
+      return "json";
+    } catch {
+      // JSON처럼 보이지만 파싱 실패
+    }
+  }
+
+  // TOML: [section] 헤더 또는 key = value 패턴
+  const tomlPattern = /^(\[[\w.-]+\]|[\w.-]+\s*=)/m;
+  if (tomlPattern.test(trimmed)) {
+    try {
+      TOML.parse(trimmed);
+      return "toml";
+    } catch {
+      // TOML처럼 보이지만 파싱 실패
+    }
+  }
+
+  // YAML: 나머지
+  try {
+    const result = yaml.load(trimmed);
+    if (typeof result === "object" && result !== null) {
+      return "yaml";
+    }
+  } catch {
+    // YAML도 아님
+  }
+
+  return null;
+}
+
+/**
  * 입력 문자열을 파싱하여 JS 객체로 변환
  */
 export function parse(input, format) {
@@ -11,7 +52,7 @@ export function parse(input, format) {
     case "yaml": {
       const result = yaml.load(input);
       if (result === undefined || result === null) {
-        throw new Error("YAML 파싱 결과가 비어 있습니다");
+        throw new Error("YAML 파싱 결과가 비어있습니다");
       }
       return result;
     }
@@ -24,8 +65,6 @@ export function parse(input, format) {
 
 /**
  * TOML 직렬화를 위한 전처리
- * - TOML은 최상위가 반드시 객체여야 함
- * - null 값 제거 (TOML은 null 미지원)
  */
 function sanitizeForToml(obj) {
   if (Array.isArray(obj)) {
@@ -83,8 +122,7 @@ export function stringify(obj, format) {
 }
 
 /**
- * 변환 메인 함수
- * @returns {{ success: boolean, output: string, error: string | null }}
+ * 변환 메인 함수 (resolvedInputFormat을 사용)
  */
 export function convert(input, inputFormat, outputFormat) {
   if (!input.trim()) {
@@ -98,45 +136,4 @@ export function convert(input, inputFormat, outputFormat) {
   } catch (e) {
     return { success: false, output: "", error: e.message };
   }
-}
-
-/**
- * 포맷 자동 감지
- */
-export function detectFormat(input) {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-
-  // JSON: { 또는 [ 로 시작
-  if (trimmed.startswith("{") || trimmed.startswith("[")) {
-    try {
-      JSON.parse(trimmed);
-      return "json";
-    } catch {
-      // JSON처럼 보이지만 파싱 실패 → 계속 시도
-    }
-  }
-
-  // TOML: [section] 헤더 또는 key = value 패턴
-  const tomlPattern = /^(\[[\w.-]+\]|[\w.-]+\s*=)/m;
-  if (tomlPattern.test(trimmed)) {
-    try {
-      TOML.parse(trimmed);
-      return "toml";
-    } catch {
-      // TOML처럼 보이지만 파싱 실패
-    }
-  }
-
-  // YAML: 나머지 (key: value 패턴)
-  try {
-    const result = yaml.load(trimmed);
-    if (typeof result === "object" && result !== null) {
-      return "yaml";
-    }
-  } catch {
-    // YAML도 아님
-  }
-
-  return null;
 }

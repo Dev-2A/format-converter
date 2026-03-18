@@ -6,9 +6,11 @@ export default function App() {
     inputValue,
     setInputValue,
     inputFormat,
+    resolvedInputFormat,
     outputFormat,
     outputValue,
     error,
+    inputErrors,
     handleInputFormatChange,
     handleOutputFormatChange,
     swap,
@@ -16,6 +18,15 @@ export default function App() {
   } = useConverter();
 
   const langMap = { json: "json", yaml: "yaml", toml: "plaintext" };
+
+  // 상태바에 표시할 실제 변환 방향
+  const displayInput = resolvedInputFormat.toUpperCase();
+  const displayOutput =
+    resolvedInputFormat === outputFormat
+      ? ["json", "yaml", "toml"]
+          .find((f) => f !== resolvedInputFormat)
+          ?.toUpperCase()
+      : outputFormat.toUpperCase();
 
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
@@ -32,27 +43,20 @@ export default function App() {
         </button>
       </header>
 
-      {/* 에러 배너 */}
-      {error && (
-        <div className="px-4 py-2 bg-red-900/50 border-b border-red-700 text-red-300 text-sm font-mono">
-          ⚠️ {error}
-        </div>
-      )}
-
       {/* 메인 2패널 */}
       <main className="flex flex-1 min-h-0">
-        {/* 왼쪽: 입력 */}
         <EditorPanel
           title="📝 Input"
           value={inputValue}
           onChange={(val) => setInputValue(val || "")}
-          language={langMap[inputFormat]}
-          formats={["json", "yaml", "toml"]}
+          language={langMap[resolvedInputFormat]}
+          formats={["auto", "json", "yaml", "toml"]}
           selectedFormat={inputFormat}
           onFormatChange={handleInputFormatChange}
+          errors={inputErrors}
+          resolvedFormat={resolvedInputFormat}
         />
 
-        {/* 중앙 구분선 + 스왑 버튼 */}
         <div className="flex flex-col items-center justify-center w-12 bg-gray-800 border-x border-gray-700 gap-2">
           <button
             onClick={swap}
@@ -63,7 +67,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* 오른쪽: 출력 */}
         <EditorPanel
           title="📄 Output"
           value={outputValue}
@@ -78,7 +81,8 @@ export default function App() {
       {/* 하단 상태바 */}
       <footer className="flex items-center justify-between px-4 py-1.5 bg-gray-800 border-t border-gray-700 text-xs text-gray-500">
         <span>
-          {inputFormat.toUpperCase()} → {outputFormat.toUpperCase()}
+          {displayInput} → {displayOutput}
+          {inputFormat === "auto" && " · 🔍 자동 감지"}
           {error && " · ❌ 변환 실패"}
           {!error && inputValue.trim() && " · ✅ 변환 성공"}
         </span>

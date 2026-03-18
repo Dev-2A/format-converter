@@ -1,23 +1,54 @@
-import { useState, useEffect, useCallback } from "react";
-import { convert } from "../utils/converter";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { convert, detectFormat } from "../utils/converter";
+import { validate } from "../utils/validator";
 import { SAMPLES } from "../constants/samples";
 
-export default function useConverter(initialInput = "") {
-  const [inputValue, setInputValue] = useState(initialInput);
-  const [inputFormat, setInputFormat] = useState("json");
+export default function useConverter() {
+  const [inputValue, setInputValue] = useState(SAMPLES.json);
+  const [inputFormat, setInputFormat] = useState("auto");
   const [outputFormat, setOutputFormat] = useState("yaml");
   const [outputValue, setOutputValue] = useState("");
   const [error, setError] = useState(null);
+  const [inputErrors, setInputErrors] = useState([]);
 
-  // 변환 실행
+  // auto일 때 실제 감지된 포맷 (파싱/변환에 사용)
+  const resolvedInputFormat = useMemo(() => {
+    if (inputFormat !== "auto") return inputFormat;
+    if (!inputValue.trim()) return "json";
+    return detectFormat(inputValue) || "json";
+  }, [inputFormat, inputValue]);
+
+  // 문법 검증 + 변환 실행
   const runConvert = useCallback(() => {
     if (!inputValue.trim()) {
       setOutputValue("");
       setError(null);
+      setInputErrors([]);
       return;
     }
 
-    const result = convert(inputValue, inputFormat, outputFormat);
+    // 출력 포맷이 감지된 입력 포맷과 같으면 자동 조정
+    let effectiveOutputFormat = outputFormat;
+    if (resolvedInputFormat === outputFormat) {
+      const formats = ["json", "yaml", "toml"];
+      effectiveOutputFormat =
+        formats.find((f) => f !== resolvedInputFormat) || "json";
+    }
+
+    const validation = validate(inputValue, resolvedInputFormat);
+    setInputErrors(validation.errors);
+
+    if (!validation.valid) {
+      setOutputValue("");
+      setError(validation.errors[0]?.message || "문법 오류");
+      return;
+    }
+
+    const result = convert(
+      inputValue,
+      resolvedInputFormat,
+      effectiveOutputFormat,
+    );
     if (result.success) {
       setOutputValue(result.output);
       setError(null);
@@ -25,9 +56,9 @@ export default function useConverter(initialInput = "") {
       setOutputValue("");
       setError(result.error);
     }
-  }, [inputValue, inputFormat, outputFormat]);
+  }, [inputValue, resolvedInputFormat, outputFormat]);
 
-  // 입력값 또는 포맷 변경 시 자동 변환 (디바운스 200ms)
+  // 디바운스 200ms
   useEffect(() => {
     const timer = setTimeout(() => {
       runConvert();
@@ -35,19 +66,20 @@ export default function useConverter(initialInput = "") {
     return () => clearTimeout(timer);
   }, [runConvert]);
 
-  // 입력 포맷 변경 시 샘플 로드 + 출력 포맷 충돌 방지
+  // 입력 포맷 변경
   const handleInputFormatChange = (fmt) => {
     setInputFormat(fmt);
-    if (fmt === outputFormat) {
+    if (fmt !== "auto" && fmt === outputFormat) {
       const formats = ["json", "yaml", "toml"];
       const other = formats.find((f) => f !== fmt);
       setOutputFormat(other);
     }
   };
 
+  // 출력 포맷 변경
   const handleOutputFormatChange = (fmt) => {
     setOutputFormat(fmt);
-    if (fmt === inputFormat) {
+    if (fmt === resolvedInputFormat && inputFormat !== "auto") {
       const formats = ["json", "yaml", "toml"];
       const other = formats.find((f) => f !== fmt);
       setInputFormat(other);
@@ -58,21 +90,25 @@ export default function useConverter(initialInput = "") {
   const swap = () => {
     setInputValue(outputValue);
     setInputFormat(outputFormat);
-    setOutputFormat(inputFormat);
+    // 출력 포맷은 이전 resolvedInputFormat 기반
+    setOutputFormat(resolvedInputFormat);
   };
 
   // 샘플 데이터 로드
   const loadSample = () => {
-    setInputValue(SAMPLES[inputFormat]);
+    const fmt = resolvedInputFormat;
+    setInputValue(SAMPLES[fmt] || SAMPLES.json);
   };
 
   return {
     inputValue,
     setInputValue,
     inputFormat,
+    resolvedInputFormat,
     outputFormat,
     outputValue,
     error,
+    inputErrors,
     handleInputFormatChange,
     handleOutputFormatChange,
     swap,
