@@ -15,7 +15,6 @@ export default function Toolbar({
     setTimeout(() => setCopyFeedback(null), 1500);
   }, []);
 
-  // 출력 결과 클립보드 복사
   const handleCopyOutput = async () => {
     if (!outputValue.trim()) return;
     try {
@@ -26,7 +25,6 @@ export default function Toolbar({
     }
   };
 
-  // 입력 내용 클립보드 복사
   const handleCopyInput = async () => {
     if (!inputValue.trim()) return;
     try {
@@ -37,10 +35,8 @@ export default function Toolbar({
     }
   };
 
-  // 파일 확장자 매핑
   const extMap = { json: "json", yaml: "yaml", toml: "toml" };
 
-  // 출력 결과 파일 다운로드
   const handleDownload = () => {
     if (!outputValue.trim()) return;
     const ext = extMap[outputFormat] || "txt";
@@ -56,7 +52,6 @@ export default function Toolbar({
     showFeedback(`✅ converted.${ext} 다운로드!`);
   };
 
-  // 파일 업로드 (입력에 로드)
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -69,15 +64,29 @@ export default function Toolbar({
       }
     };
     reader.readAsText(file);
-    // input 초기화 (같은 파일 다시 선택 가능)
     e.target.value = "";
   };
 
+  const btnBase =
+    "px-2.5 py-1 text-xs font-medium rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed";
+
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
-      {/* 왼쪽: 입력 관련 */}
+    <div
+      className="flex items-center justify-between px-4 py-2 border-b"
+      style={{
+        background: "var(--fc-bg-secondary)",
+        borderColor: "var(--fc-border)",
+      }}
+    >
+      {/* 왼쪽 */}
       <div className="flex items-center gap-1">
-        <label className="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white rounded transition-colors cursor-pointer">
+        <label
+          className={`${btnBase} cursor-pointer`}
+          style={{
+            background: "var(--fc-bg-primary)",
+            color: "var(--fc-text-secondary)",
+          }}
+        >
           📂 파일 열기
           <input
             type="file"
@@ -89,39 +98,58 @@ export default function Toolbar({
         <button
           onClick={handleCopyInput}
           disabled={!inputValue.trim()}
-          className="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className={btnBase}
+          style={{
+            background: "var(--fc-bg-primary)",
+            color: "var(--fc-text-secondary)",
+          }}
         >
           📋 입력 복사
         </button>
         <button
           onClick={() => onClear("")}
           disabled={!inputValue.trim()}
-          className="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className={btnBase}
+          style={{
+            background: "var(--fc-bg-primary)",
+            color: "var(--fc-text-secondary)",
+          }}
         >
           🗑️ 클리어
         </button>
       </div>
 
-      {/* 가운데: 피드백 메시지 */}
+      {/* 가운데: 피드백 */}
       {copyFeedback && (
-        <span className="text-xs text-emerald-400 font-medium animate-pulse">
+        <span
+          className="text-xs font-medium animate-fade-in-out"
+          style={{ color: "var(--fc-accent)" }}
+        >
           {copyFeedback}
         </span>
       )}
 
-      {/* 오른쪽: 출력 관련 */}
+      {/* 오른쪽 */}
       <div className="flex items-center gap-1">
         <button
           onClick={handleCopyOutput}
           disabled={!outputValue.trim() || !!error}
-          className="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className={btnBase}
+          style={{
+            background: "var(--fc-bg-primary)",
+            color: "var(--fc-text-secondary)",
+          }}
         >
           📋 출력 복사
         </button>
         <button
           onClick={handleDownload}
           disabled={!outputValue.trim() || !!error}
-          className="px-2.5 py-1 text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className={btnBase}
+          style={{
+            background: "var(--fc-bg-primary)",
+            color: "var(--fc-text-secondary)",
+          }}
         >
           💾 다운로드
         </button>

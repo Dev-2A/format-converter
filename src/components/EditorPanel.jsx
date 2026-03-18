@@ -19,6 +19,7 @@ export default function EditorPanel({
   onFormatChange,
   errors = [],
   resolvedFormat,
+  theme = "dark",
 }) {
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
@@ -28,7 +29,6 @@ export default function EditorPanel({
     monacoRef.current = monaco;
   }, []);
 
-  // 에러 마커를 useEffect 안에서만 업데이트
   useEffect(() => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
@@ -49,12 +49,25 @@ export default function EditorPanel({
     monaco.editor.setModelMarkers(model, "validator", markers);
   }, [errors]);
 
+  const monacoTheme = theme === "dark" ? "vs-dark" : "light";
+
   return (
     <div className="flex flex-col flex-1 min-w-0 h-full">
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+      <div
+        className="flex items-center justify-between px-4 py-2 border-b"
+        style={{
+          background: "var(--fc-bg-secondary)",
+          borderColor: "var(--fc-border)",
+        }}
+      >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-300">{title}</span>
+          <span
+            className="text-sm font-semibold"
+            style={{ color: "var(--fc-text-primary)" }}
+          >
+            {title}
+          </span>
           {!readOnly && value?.trim() && (
             <span
               className={`w-2 h-2 rounded-full ${
@@ -63,9 +76,11 @@ export default function EditorPanel({
               title={errors.length > 0 ? "문법 오류 있음" : "문법 정상"}
             />
           )}
-          {/* Auto 모드일 때 감지된 포맷 표시 */}
           {selectedFormat === "auto" && resolvedFormat && value?.trim() && (
-            <span className="text-xs text-emerald-400 font-mono">
+            <span
+              className="text-xs font-mono"
+              style={{ color: "var(--fc-accent)" }}
+            >
               → {resolvedFormat.toUpperCase()}
             </span>
           )}
@@ -80,8 +95,16 @@ export default function EditorPanel({
                   ? fmt === "auto"
                     ? "bg-blue-500 text-white"
                     : "bg-emerald-500 text-white"
-                  : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-gray-200"
+                  : ""
               }`}
+              style={
+                selectedFormat !== fmt
+                  ? {
+                      background: "var(--fc-bg-primary)",
+                      color: "var(--fc-text-muted)",
+                    }
+                  : undefined
+              }
             >
               {FORMAT_LABELS[fmt]}
             </button>
@@ -96,7 +119,7 @@ export default function EditorPanel({
           language={language}
           value={value}
           onChange={onChange}
-          theme="vs-dark"
+          theme={monacoTheme}
           onMount={handleEditorDidMount}
           options={{
             readOnly,

@@ -2,6 +2,8 @@ import EditorPanel from "./components/EditorPanel";
 import DiffPanel from "./components/DiffPanel";
 import Toolbar from "./components/Toolbar";
 import useConverter from "./hooks/useConverter";
+import useTheme from "./hooks/useTheme";
+import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 
 export default function App() {
   const {
@@ -23,6 +25,14 @@ export default function App() {
     toggleDiff,
   } = useConverter();
 
+  const { theme, toggleTheme } = useTheme();
+
+  useKeyboardShortcuts({
+    onSwap: swap,
+    onToggleDiff: toggleDiff,
+    onClear: () => setInputValue(""),
+  });
+
   const langMap = { json: "json", yaml: "yaml", toml: "plaintext" };
 
   const displayInput = resolvedInputFormat.toUpperCase();
@@ -34,28 +44,67 @@ export default function App() {
       : outputFormat.toUpperCase();
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900 text-white">
+    <div
+      className="h-screen flex flex-col"
+      style={{
+        background: "var(--fc-bg-primary)",
+        color: "var(--fc-text-primary)",
+      }}
+    >
       {/* 상단 헤더 */}
-      <header className="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
-        <h1 className="text-lg font-bold text-emerald-400">
+      <header
+        className="flex items-center justify-between px-6 py-3 border-b"
+        style={{
+          background: "var(--fc-bg-secondary)",
+          borderColor: "var(--fc-border)",
+        }}
+      >
+        <h1 className="text-lg font-bold" style={{ color: "var(--fc-accent)" }}>
           🔄 Format Converter
         </h1>
         <div className="flex items-center gap-2">
+          {/* 단축키 힌트 */}
+          <span
+            className="text-xs hidden md:inline"
+            style={{ color: "var(--fc-text-muted)" }}
+          >
+            Ctrl+E 스왑 · Ctrl+D Diff
+          </span>
+          <button
+            onClick={toggleTheme}
+            className="px-3 py-1 text-xs font-medium rounded transition-colors"
+            style={{
+              background: "var(--fc-bg-primary)",
+              color: "var(--fc-text-secondary)",
+            }}
+          >
+            {theme === "dark" ? "☀️ 라이트" : "🌙 다크"}
+          </button>
           <button
             onClick={toggleDiff}
             className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-              diffMode
-                ? "bg-amber-500 text-white"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white"
+              diffMode ? "bg-amber-500 text-white" : ""
             }`}
+            style={
+              !diffMode
+                ? {
+                    background: "var(--fc-bg-primary)",
+                    color: "var(--fc-text-secondary)",
+                  }
+                : undefined
+            }
           >
             {diffMode ? "🔍 Diff ON" : "🔍 Diff"}
           </button>
           <button
             onClick={loadSample}
-            className="px-3 py-1 text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white rounded transition-colors"
+            className="px-3 py-1 text-xs font-medium rounded transition-colors"
+            style={{
+              background: "var(--fc-bg-primary)",
+              color: "var(--fc-text-secondary)",
+            }}
           >
-            📋 샘플 데이터
+            📋 샘플
           </button>
         </div>
       </header>
@@ -79,6 +128,7 @@ export default function App() {
             original={diffOriginal}
             modified={diffModified}
             language={langMap[outputFormat]}
+            theme={theme}
           />
         ) : (
           <>
@@ -92,13 +142,21 @@ export default function App() {
               onFormatChange={handleInputFormatChange}
               errors={inputErrors}
               resolvedFormat={resolvedInputFormat}
+              theme={theme}
             />
 
-            <div className="flex flex-col items-center justify-center w-12 bg-gray-800 border-x border-gray-700 gap-2">
+            <div
+              className="flex flex-col items-center justify-center w-12 border-x"
+              style={{
+                background: "var(--fc-bg-secondary)",
+                borderColor: "var(--fc-border)",
+              }}
+            >
               <button
                 onClick={swap}
-                className="p-2 text-emerald-400 hover:text-emerald-300 hover:bg-gray-700 rounded transition-colors"
-                title="입출력 스왑"
+                className="p-2 rounded transition-colors hover:opacity-80"
+                style={{ color: "var(--fc-accent)" }}
+                title="입출력 스왑 (Ctrl+E)"
               >
                 ⇄
               </button>
@@ -112,13 +170,21 @@ export default function App() {
               formats={["json", "yaml", "toml"]}
               selectedFormat={outputFormat}
               onFormatChange={handleOutputFormatChange}
+              theme={theme}
             />
           </>
         )}
       </main>
 
       {/* 하단 상태바 */}
-      <footer className="flex items-center justify-between px-4 py-1.5 bg-gray-800 border-t border-gray-700 text-xs text-gray-500">
+      <footer
+        className="flex items-center justify-between px-4 py-1.5 border-t text-xs"
+        style={{
+          background: "var(--fc-bg-secondary)",
+          borderColor: "var(--fc-border)",
+          color: "var(--fc-text-muted)",
+        }}
+      >
         <span>
           {displayInput} → {displayOutput}
           {inputFormat === "auto" && " · 🔍 자동 감지"}

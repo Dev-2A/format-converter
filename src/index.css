@@ -6,3 +6,72 @@ body {
   margin: 0;
   min-height: 100vh;
 }
+
+/* 라이트 테마 기본 */
+:root {
+  --fc-bg-primary: #f8fafc;
+  --fc-bg-secondary: #f1f5f9;
+  --fc-bg-panel: #ffffff;
+  --fc-border: #e2e8f0;
+  --fc-text-primary: #0f172a;
+  --fc-text-secondary: #475569;
+  --fc-text-muted: #94a3b8;
+  --fc-accent: #059669;
+  --fc-accent-hover: #047857;
+}
+
+/* 다크 테마 */
+.dark {
+  --fc-bg-primary: #0f172a;
+  --fc-bg-secondary: #1e293b;
+  --fc-bg-panel: #1e293b;
+  --fc-border: #334155;
+  --fc-text-primary: #f1f5f9;
+  --fc-text-secondary: #cbd5e1;
+  --fc-text-muted: #64748b;
+  --fc-accent: #34d399;
+  --fc-accent-hover: #6ee7b7;
+}
+
+/* 스크롤바 커스텀 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--fc-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fc-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fc-text-muted);
+}
+
+/* 피드백 애니메이션 */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.animate-fade-in-out {
+  animation: fadeInOut 1.5s ease-in-out;
+}
