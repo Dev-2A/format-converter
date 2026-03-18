@@ -1,5 +1,6 @@
 import EditorPanel from "./components/EditorPanel";
 import DiffPanel from "./components/DiffPanel";
+import Toolbar from "./components/Toolbar";
 import useConverter from "./hooks/useConverter";
 
 export default function App() {
@@ -59,17 +60,27 @@ export default function App() {
         </div>
       </header>
 
+      {/* 툴바 */}
+      {!diffMode && (
+        <Toolbar
+          inputValue={inputValue}
+          outputValue={outputValue}
+          resolvedInputFormat={resolvedInputFormat}
+          outputFormat={outputFormat}
+          onClear={setInputValue}
+          error={error}
+        />
+      )}
+
       {/* 메인 영역 */}
       <main className="flex flex-1 min-h-0">
         {diffMode ? (
-          /* Diff 뷰 모드 */
           <DiffPanel
             original={diffOriginal}
             modified={diffModified}
             language={langMap[outputFormat]}
           />
         ) : (
-          /* 일반 변환 모드 */
           <>
             <EditorPanel
               title="📝 Input"
