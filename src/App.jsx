@@ -1,5 +1,5 @@
-import { useState } from "react";
-import EditorPanel from "./components/EditorPanel";
+import EditorPanel from './components/EditorPanel';
+import useConverter from './hooks/useConverter';
 
 const SAMPLE_JSON = `{
   "name": "format-converter",
@@ -17,34 +17,19 @@ const SAMPLE_JSON = `{
 }`;
 
 export default function App() {
-  const [inputFormat, setInputFormat] = useState("json");
-  const [outputFormat, setOutputFormat] = useState("yaml");
-  const [inputValue, setInputValue] = useState(SAMPLE_JSON);
-  const [outputValue, setOutputValue] = useState(
-    "// 변환 결과가 여기에 표시됩니다",
-  );
+  const {
+    inputValue,
+    setInputValue,
+    inputFormat,
+    outputFormat,
+    outputValue,
+    error,
+    handleInputFormatChange,
+    handleOutputFormatChange,
+    swap,
+  } = useConverter(SAMPLE_JSON);
 
-  // 입력 포맷 변경 시 출력 포맷이 같으면 자동 전환
-  const handleInputFormatChange = (fmt) => {
-    setInputFormat(fmt);
-    if (fmt === outputFormat) {
-      const formats = ["json", "yaml", "toml"];
-      const other = formats.find((f) => f !== fmt);
-      setOutputFormat(other);
-    }
-  };
-
-  const handleOutputFormatChange = (fmt) => {
-    setOutputFormat(fmt);
-    if (fmt === inputFormat) {
-      const formats = ["json", "yaml", "toml"];
-      const other = formats.find((f) => f !== fmt);
-      setInputFormat(other);
-    }
-  };
-
-  // Monaco language 매핑
-  const langMap = { json: "json", yaml: "yaml", toml: "plaintext" };
+  const langMap = { json: 'json', yaml: 'yaml', toml: 'plaintext' };
 
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
@@ -55,26 +40,34 @@ export default function App() {
         </h1>
       </header>
 
+      {/* 에러 배너 */}
+      {error && (
+        <div className="px-4 py-2 bg-red-900/50 border-b border-red-700 text-red-300 text-sm font-mono">
+          ⚠️ {error}
+        </div>
+      )}
+
       {/* 메인 2패널 */}
       <main className="flex flex-1 min-h-0">
         {/* 왼쪽: 입력 */}
         <EditorPanel
           title="📝 Input"
           value={inputValue}
-          onChange={(val) => setInputValue(val || "")}
+          onChange={(val) => setInputValue(val || '')}
           language={langMap[inputFormat]}
-          formats={["json", "yaml", "toml"]}
+          formats={['json', 'yaml', 'toml']}
           selectedFormat={inputFormat}
           onFormatChange={handleInputFormatChange}
         />
 
-        {/* 중앙 구분선 + 변환 버튼 */}
-        <div className="flex flex-col items-center justify-center w-12 bg-gray-800 border-x border-gray-700">
+        {/* 중앙 구분선 + 스왑 버튼 */}
+        <div className="flex flex-col items-center justify-center w-12 bg-gray-800 border-x border-gray-700 gap-2">
           <button
+            onClick={swap}
             className="p-2 text-emerald-400 hover:text-emerald-300 hover:bg-gray-700 rounded transition-colors"
-            title="변환"
+            title="입출력 스왑"
           >
-            →
+            ⇄
           </button>
         </div>
 
@@ -84,7 +77,7 @@ export default function App() {
           value={outputValue}
           language={langMap[outputFormat]}
           readOnly
-          formats={["json", "yaml", "toml"]}
+          formats={['json', 'yaml', 'toml']}
           selectedFormat={outputFormat}
           onFormatChange={handleOutputFormatChange}
         />
@@ -94,6 +87,8 @@ export default function App() {
       <footer className="flex items-center justify-between px-4 py-1.5 bg-gray-800 border-t border-gray-700 text-xs text-gray-500">
         <span>
           {inputFormat.toUpperCase()} → {outputFormat.toUpperCase()}
+          {error && ' · ❌ 변환 실패'}
+          {!error && inputValue.trim() && ' · ✅ 변환 성공'}
         </span>
         <span>백엔드 없이 브라우저에서 동작합니다</span>
       </footer>
