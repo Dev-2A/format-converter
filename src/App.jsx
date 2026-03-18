@@ -1,20 +1,5 @@
-import EditorPanel from './components/EditorPanel';
-import useConverter from './hooks/useConverter';
-
-const SAMPLE_JSON = `{
-  "name": "format-converter",
-  "version": "0.1.0",
-  "description": "JSON, YAML, TOML 만능 변환기",
-  "features": [
-    "실시간 변환",
-    "문법 검증",
-    "diff 뷰"
-  ],
-  "author": {
-    "name": "Dev-2A",
-    "github": "https://github.com/Dev-2A"
-  }
-}`;
+import EditorPanel from "./components/EditorPanel";
+import useConverter from "./hooks/useConverter";
 
 export default function App() {
   const {
@@ -27,17 +12,24 @@ export default function App() {
     handleInputFormatChange,
     handleOutputFormatChange,
     swap,
-  } = useConverter(SAMPLE_JSON);
+    loadSample,
+  } = useConverter();
 
-  const langMap = { json: 'json', yaml: 'yaml', toml: 'plaintext' };
+  const langMap = { json: "json", yaml: "yaml", toml: "plaintext" };
 
   return (
     <div className="h-screen flex flex-col bg-gray-900 text-white">
       {/* 상단 헤더 */}
-      <header className="flex items-center justify-center px-6 py-3 bg-gray-800 border-b border-gray-700">
+      <header className="flex items-center justify-between px-6 py-3 bg-gray-800 border-b border-gray-700">
         <h1 className="text-lg font-bold text-emerald-400">
           🔄 Format Converter
         </h1>
+        <button
+          onClick={loadSample}
+          className="px-3 py-1 text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white rounded transition-colors"
+        >
+          📋 샘플 데이터
+        </button>
       </header>
 
       {/* 에러 배너 */}
@@ -53,9 +45,9 @@ export default function App() {
         <EditorPanel
           title="📝 Input"
           value={inputValue}
-          onChange={(val) => setInputValue(val || '')}
+          onChange={(val) => setInputValue(val || "")}
           language={langMap[inputFormat]}
-          formats={['json', 'yaml', 'toml']}
+          formats={["json", "yaml", "toml"]}
           selectedFormat={inputFormat}
           onFormatChange={handleInputFormatChange}
         />
@@ -77,7 +69,7 @@ export default function App() {
           value={outputValue}
           language={langMap[outputFormat]}
           readOnly
-          formats={['json', 'yaml', 'toml']}
+          formats={["json", "yaml", "toml"]}
           selectedFormat={outputFormat}
           onFormatChange={handleOutputFormatChange}
         />
@@ -87,8 +79,8 @@ export default function App() {
       <footer className="flex items-center justify-between px-4 py-1.5 bg-gray-800 border-t border-gray-700 text-xs text-gray-500">
         <span>
           {inputFormat.toUpperCase()} → {outputFormat.toUpperCase()}
-          {error && ' · ❌ 변환 실패'}
-          {!error && inputValue.trim() && ' · ✅ 변환 성공'}
+          {error && " · ❌ 변환 실패"}
+          {!error && inputValue.trim() && " · ✅ 변환 성공"}
         </span>
         <span>백엔드 없이 브라우저에서 동작합니다</span>
       </footer>

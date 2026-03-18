@@ -1,4 +1,5 @@
 import yaml from "js-yaml";
+import * as TOML from "smol-toml";
 
 /**
  * 입력 문자열을 파싱하여 JS 객체로 변환
@@ -7,11 +8,55 @@ export function parse(input, format) {
   switch (format) {
     case "json":
       return JSON.parse(input);
-    case "yaml":
-      return yaml.load(input);
+    case "yaml": {
+      const result = yaml.load(input);
+      if (result === undefined || result === null) {
+        throw new Error("YAML 파싱 결과가 비어 있습니다");
+      }
+      return result;
+    }
+    case "toml":
+      return TOML.parse(input);
     default:
       throw new Error(`지원하지 않는 입력 포맷: ${format}`);
   }
+}
+
+/**
+ * TOML 직렬화를 위한 전처리
+ * - TOML은 최상위가 반드시 객체여야 함
+ * - null 값 제거 (TOML은 null 미지원)
+ */
+function sanitizeForToml(obj) {
+  if (Array.isArray(obj)) {
+    return { items: obj.map(sanitizeForToml) };
+  }
+  if (obj === null || obj === undefined) {
+    return "";
+  }
+  if (typeof obj !== "object") {
+    return obj;
+  }
+
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === null || value === undefined) {
+      result[key] = "";
+    } else if (Array.isArray(value)) {
+      result[key] = value.map((item) =>
+        item === null || item === undefined
+          ? ""
+          : typeof item === "object"
+            ? sanitizeForToml(item)
+            : item,
+      );
+    } else if (typeof value === "object") {
+      result[key] = sanitizeForToml(value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
 }
 
 /**
@@ -28,6 +73,10 @@ export function stringify(obj, format) {
         noRefs: true,
         sortKeys: false,
       });
+    case "toml": {
+      const sanitized = sanitizeForToml(obj);
+      return TOML.stringify(sanitized);
+    }
     default:
       throw new Error(`지원하지 않는 출력 포맷: ${format}`);
   }
@@ -38,18 +87,8 @@ export function stringify(obj, format) {
  * @returns {{ success: boolean, output: string, error: string | null }}
  */
 export function convert(input, inputFormat, outputFormat) {
-  // 같은 포맷이면 정렬만 해서 반환
-  if (inputFormat === outputFormat) {
-    try {
-      const obj = parse(input, inputFormat);
-      return {
-        success: true,
-        output: stringify(obj, outputFormat),
-        error: null,
-      };
-    } catch (e) {
-      return { success: false, output: "", error: e.message };
-    }
+  if (!input.trim()) {
+    return { success: true, output: "", error: null };
   }
 
   try {
@@ -59,4 +98,45 @@ export function convert(input, inputFormat, outputFormat) {
   } catch (e) {
     return { success: false, output: "", error: e.message };
   }
+}
+
+/**
+ * 포맷 자동 감지
+ */
+export function detectFormat(input) {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // JSON: { 또는 [ 로 시작
+  if (trimmed.startswith("{") || trimmed.startswith("[")) {
+    try {
+      JSON.parse(trimmed);
+      return "json";
+    } catch {
+      // JSON처럼 보이지만 파싱 실패 → 계속 시도
+    }
+  }
+
+  // TOML: [section] 헤더 또는 key = value 패턴
+  const tomlPattern = /^(\[[\w.-]+\]|[\w.-]+\s*=)/m;
+  if (tomlPattern.test(trimmed)) {
+    try {
+      TOML.parse(trimmed);
+      return "toml";
+    } catch {
+      // TOML처럼 보이지만 파싱 실패
+    }
+  }
+
+  // YAML: 나머지 (key: value 패턴)
+  try {
+    const result = yaml.load(trimmed);
+    if (typeof result === "object" && result !== null) {
+      return "yaml";
+    }
+  } catch {
+    // YAML도 아님
+  }
+
+  return null;
 }

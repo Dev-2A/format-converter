@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { convert } from "../utils/converter";
+import { SAMPLES } from "../constants/samples";
 
 export default function useConverter(initialInput = "") {
   const [inputValue, setInputValue] = useState(initialInput);
@@ -34,7 +35,7 @@ export default function useConverter(initialInput = "") {
     return () => clearTimeout(timer);
   }, [runConvert]);
 
-  // 입력 포맷 변경 시 출력 포맷 충돌 방지
+  // 입력 포맷 변경 시 샘플 로드 + 출력 포맷 충돌 방지
   const handleInputFormatChange = (fmt) => {
     setInputFormat(fmt);
     if (fmt === outputFormat) {
@@ -60,6 +61,11 @@ export default function useConverter(initialInput = "") {
     setOutputFormat(inputFormat);
   };
 
+  // 샘플 데이터 로드
+  const loadSample = () => {
+    setInputValue(SAMPLES[inputFormat]);
+  };
+
   return {
     inputValue,
     setInputValue,
@@ -70,5 +76,6 @@ export default function useConverter(initialInput = "") {
     handleInputFormatChange,
     handleOutputFormatChange,
     swap,
+    loadSample,
   };
 }
